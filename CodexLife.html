@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex Life</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #111318;
+            --panel: #1b1f27;
+            --panel-2: #242936;
+            --text: #eef2f7;
+            --muted: #9aa6b8;
+            --line: #343b49;
+            --alive: #f4d35e;
+            --newborn: #5dd39e;
+            --dying: #ee6c4d;
+            --accent: #65b8ff;
+            --focus: #f4d35e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                linear-gradient(135deg, rgba(244, 211, 94, 0.08), transparent 32%),
+                linear-gradient(315deg, rgba(101, 184, 255, 0.10), transparent 34%),
+                var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button,
+        select,
+        input[type="number"],
+        input[type="range"] {
+            color: var(--text);
+        }
+
+        button {
+            min-height: 36px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: var(--panel-2);
+            padding: 0 12px;
+            cursor: pointer;
+            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+        }
+
+        button:hover {
+            border-color: var(--accent);
+            background: #2b3341;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.primary {
+            background: #f4d35e;
+            border-color: #f4d35e;
+            color: #17120a;
+            font-weight: 700;
+        }
+
+        button.primary:hover {
+            background: #ffe27a;
+        }
+
+        button.danger:hover {
+            border-color: var(--dying);
+        }
+
+        input[type="number"],
+        select {
+            width: 78px;
+            min-height: 36px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: #121722;
+            padding: 0 9px;
+        }
+
+        select {
+            width: 150px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: var(--accent);
+        }
+
+        label {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .app {
+            height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(320px, 1fr) 330px;
+            gap: 14px;
+            padding: 14px;
+            overflow: hidden;
+        }
+
+        .stage {
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 3.4vw, 44px);
+            line-height: 0.95;
+            letter-spacing: 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(92px, 1fr));
+            gap: 8px;
+            min-width: 420px;
+        }
+
+        .stat {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(27, 31, 39, 0.88);
+            padding: 10px;
+        }
+
+        .stat span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .stat strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .canvas-shell {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #090b0f;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .badge {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            background: rgba(10, 13, 18, 0.78);
+            padding: 6px 10px;
+            color: var(--muted);
+            font-size: 12px;
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+        }
+
+        .side {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 0;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(27, 31, 39, 0.92);
+            padding: 12px;
+        }
+
+        .panel h2 {
+            margin: 0 0 10px;
+            font-size: 15px;
+            letter-spacing: 0;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .random-tools {
+            display: grid;
+            grid-template-columns: minmax(104px, auto) 1fr;
+            gap: 8px;
+            align-items: end;
+            margin-bottom: 8px;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .random-tools .field {
+            margin-bottom: 0;
+        }
+
+        .inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .inline label {
+            min-width: 64px;
+        }
+
+        .size-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .toggle-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .swatch {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: -1px;
+        }
+
+        .status {
+            min-height: 36px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        @media (max-width: 980px) {
+            .app {
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .stats {
+                min-width: 0;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .canvas-shell {
+                min-height: 58vh;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .app {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .stats,
+            .size-grid,
+            .legend {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .random-tools {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <section class="stage">
+            <div class="topbar">
+                <div>
+                    <h1>Codex Life</h1>
+                </div>
+                <div class="stats" aria-live="polite">
+                    <div class="stat"><span>Покоління</span><strong id="generationValue">0</strong></div>
+                    <div class="stat"><span>Живі</span><strong id="liveValue">0</strong></div>
+                    <div class="stat"><span>Щільність</span><strong id="densityValue">0%</strong></div>
+                    <div class="stat"><span>Стан</span><strong id="stateValue">Тиша</strong></div>
+                </div>
+            </div>
+
+            <div class="canvas-shell" id="canvasShell">
+                <canvas id="lifeCanvas" width="900" height="620" aria-label="Поле гри Життя"></canvas>
+                <div class="badge" id="badge">60 x 60, клітинка 10 px</div>
+            </div>
+        </section>
+
+        <aside class="side">
+            <section class="panel">
+                <h2>Керування</h2>
+                <div class="controls-grid">
+                    <button class="primary" id="playButton" type="button">Старт</button>
+                    <button id="stepButton" type="button">Крок</button>
+                    <button id="pauseButton" type="button">Пауза</button>
+                    <button class="danger" id="clearButton" type="button">Очистити</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Світ</h2>
+                <div class="field">
+                    <label for="speedInput">Швидкість: <span id="speedLabel">120 мс</span></label>
+                    <input id="speedInput" type="range" min="30" max="900" step="10" value="120">
+                </div>
+                <div class="toggle-row">
+                    <span>Еволюція стабільної системи</span>
+                    <input id="evolutionRuleInput" type="checkbox">
+                </div>
+                <div class="field">
+                    <label for="evolutionDelayInput">Еволюція через</label>
+                    <input id="evolutionDelayInput" type="number" min="0" max="10000" step="1" value="1024">
+                </div>
+                <div class="toggle-row">
+                    <span>Зародження життя 10x10</span>
+                    <input id="lifeBirthRuleInput" type="checkbox">
+                </div>
+                <div class="field">
+                    <label for="lifeBirthIntervalInput">Зародження кожні</label>
+                    <input id="lifeBirthIntervalInput" type="number" min="0" max="100000" step="100" value="8192">
+                </div>
+                <div class="random-tools">
+                    <button id="randomButton" type="button">Випадково</button>
+                    <div class="field">
+                        <label for="randomnessInput">Щільність: <span id="randomnessLabel">34%</span></label>
+                        <input id="randomnessInput" type="range" min="5" max="75" step="1" value="34">
+                    </div>
+                </div>
+                <div class="controls-grid">
+                    <button id="seedButton" type="button">Насіння</button>
+                    <button id="resetSettingsButton" type="button">Скинути налаштування</button>
+                </div>
+                <div class="toggle-row">
+                    <span>Зациклені краї</span>
+                    <input id="wrapInput" type="checkbox" checked>
+                </div>
+                <div class="toggle-row">
+                    <span>Сітка</span>
+                    <input id="gridInput" type="checkbox" checked>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Розмір</h2>
+                <div class="size-grid">
+                    <div class="field">
+                        <label for="rowsInput">Рядки</label>
+                        <input id="rowsInput" type="number" min="12" max="220" value="60">
+                    </div>
+                    <div class="field">
+                        <label for="colsInput">Стовпці</label>
+                        <input id="colsInput" type="number" min="12" max="260" value="60">
+                    </div>
+                    <div class="field">
+                        <label for="cellSizeInput">Клітинка</label>
+                        <input id="cellSizeInput" type="number" min="4" max="24" value="10">
+                    </div>
+                    <div class="field">
+                        <label for="patternSelect">Патерн</label>
+                        <select id="patternSelect">
+                            <option value="glider">Планер</option>
+                            <option value="pulsar">Пульсар</option>
+                            <option value="gosper">Гармата</option>
+                            <option value="beacon">Маяк</option>
+                            <option value="line">Лінія</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="controls-grid">
+                    <button id="applyButton" type="button">Застосувати</button>
+                    <button id="patternButton" type="button">Вставити</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Файл</h2>
+                <div class="controls-grid">
+                    <button id="saveButton" type="button">Зберегти JSON</button>
+                    <button id="loadButton" type="button">Завантажити</button>
+                </div>
+                <input class="file-input" id="fileInput" type="file" accept=".json,application/json">
+                <div class="legend">
+                    <span><i class="swatch" style="background: var(--alive);"></i>живе</span>
+                    <span><i class="swatch" style="background: var(--newborn);"></i>народилось</span>
+                    <span><i class="swatch" style="background: var(--dying);"></i>згасло</span>
+                    <span><i class="swatch" style="background: #20242c;"></i>порожньо</span>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Спостереження</h2>
+                <div class="status" id="statusText">Готово до запуску.</div>
+            </section>
+        </aside>
+    </main>
+
+    <script>
+        window.addEventListener('error', event => {
+            const status = document.getElementById('statusText');
+            if (status) {
+                status.textContent = `Помилка запуску: ${event.message}`;
+            }
+        });
+
+        window.addEventListener('unhandledrejection', event => {
+            const status = document.getElementById('statusText');
+            if (status) {
+                status.textContent = `Помилка запуску: ${event.reason?.message || event.reason}`;
+            }
+        });
+
+        (() => {
+            const STORAGE_KEY = 'codex-life-state-v1';
+            const canvas = document.getElementById('lifeCanvas');
+            const shell = document.getElementById('canvasShell');
+            const ctx = canvas.getContext('2d');
+            const ui = {
+                play: document.getElementById('playButton'),
+                pause: document.getElementById('pauseButton'),
+                step: document.getElementById('stepButton'),
+                clear: document.getElementById('clearButton'),
+                random: document.getElementById('randomButton'),
+                seed: document.getElementById('seedButton'),
+                resetSettings: document.getElementById('resetSettingsButton'),
+                save: document.getElementById('saveButton'),
+                load: document.getElementById('loadButton'),
+                file: document.getElementById('fileInput'),
+                apply: document.getElementById('applyButton'),
+                pattern: document.getElementById('patternButton'),
+                speed: document.getElementById('speedInput'),
+                speedLabel: document.getElementById('speedLabel'),
+                randomness: document.getElementById('randomnessInput'),
+                randomnessLabel: document.getElementById('randomnessLabel'),
+                lifeBirthInterval: document.getElementById('lifeBirthIntervalInput'),
+                evolutionRule: document.getElementById('evolutionRuleInput'),
+                evolutionDelay: document.getElementById('evolutionDelayInput'),
+                lifeBirthRule: document.getElementById('lifeBirthRuleInput'),
+                rows: document.getElementById('rowsInput'),
+                cols: document.getElementById('colsInput'),
+                cellSize: document.getElementById('cellSizeInput'),
+                patternSelect: document.getElementById('patternSelect'),
+                wrap: document.getElementById('wrapInput'),
+                grid: document.getElementById('gridInput'),
+                generation: document.getElementById('generationValue'),
+                live: document.getElementById('liveValue'),
+                density: document.getElementById('densityValue'),
+                state: document.getElementById('stateValue'),
+                badge: document.getElementById('badge'),
+                status: document.getElementById('statusText')
+            };
+
+            const patterns = {
+                glider: [[0, 1], [1, 2], [2, 0], [2, 1], [2, 2]],
+                beacon: [[0, 0], [0, 1], [1, 0], [1, 1], [2, 2], [2, 3], [3, 2], [3, 3]],
+                line: Array.from({ length: 25 }, (_, i) => [0, i]),
+                pulsar: [
+                    [0, 2], [0, 3], [0, 4], [0, 8], [0, 9], [0, 10],
+                    [2, 0], [2, 5], [2, 7], [2, 12],
+                    [3, 0], [3, 5], [3, 7], [3, 12],
+                    [4, 0], [4, 5], [4, 7], [4, 12],
+                    [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
+                    [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
+                    [8, 0], [8, 5], [8, 7], [8, 12],
+                    [9, 0], [9, 5], [9, 7], [9, 12],
+                    [10, 0], [10, 5], [10, 7], [10, 12],
+                    [12, 2], [12, 3], [12, 4], [12, 8], [12, 9], [12, 10]
+                ],
+                gosper: [
+                    [5, 1], [5, 2], [6, 1], [6, 2],
+                    [3, 13], [3, 14], [4, 12], [4, 16], [5, 11], [5, 17],
+                    [6, 11], [6, 15], [6, 17], [6, 18], [7, 11], [7, 17],
+                    [8, 12], [8, 16], [9, 13], [9, 14],
+                    [1, 25], [2, 23], [2, 25], [3, 21], [3, 22],
+                    [4, 21], [4, 22], [5, 21], [5, 22], [6, 23],
+                    [6, 25], [7, 25], [3, 35], [3, 36], [4, 35], [4, 36]
+                ]
+            };
+
+            let rows = 60;
+            let cols = 60;
+            let cellSize = 10;
+            let generation = 0;
+            let liveCount = 0;
+            let grid = createGrid(rows, cols);
+            let previousGrid = createGrid(rows, cols);
+            let history = [];
+            let evolutionQueue = [];
+            let evolvedSystems = new Set();
+            let running = false;
+            let accumulator = 0;
+            let lastFrame = 0;
+            let rafId = 0;
+            const burstSize = 10;
+            const defaultRows = 60;
+            const defaultCols = 60;
+            const defaultCellSize = 10;
+            const defaultSpeed = 120;
+            const defaultRandomness = 34;
+            const defaultPattern = 'glider';
+            const defaultWrap = true;
+            const defaultShowGrid = true;
+            const defaultEvolutionDelay = 1024;
+            const defaultLifeBirthInterval = 8192;
+
+            function createGrid(r, c) {
+                return new Uint8Array(r * c);
+            }
+
+            function index(row, col) {
+                return row * cols + col;
+            }
+
+            function clampInt(value, min, max, fallback) {
+                const parsed = Number.parseInt(value, 10);
+                if (Number.isNaN(parsed)) return fallback;
+                return Math.max(min, Math.min(max, parsed));
+            }
+
+            function resizeCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                const cssWidth = Math.max(320, shell.clientWidth);
+                const cssHeight = Math.max(320, shell.clientHeight);
+                canvas.width = Math.floor(cssWidth * dpr);
+                canvas.height = Math.floor(cssHeight * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                draw();
+            }
+
+            function worldSize() {
+                return {
+                    width: cols * cellSize,
+                    height: rows * cellSize,
+                    offsetX: Math.max(0, (shell.clientWidth - cols * cellSize) / 2),
+                    offsetY: Math.max(0, (shell.clientHeight - rows * cellSize) / 2)
+                };
+            }
+
+            function draw() {
+                const width = shell.clientWidth;
+                const height = shell.clientHeight;
+                const world = worldSize();
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#090b0f';
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = '#20242c';
+                ctx.fillRect(world.offsetX, world.offsetY, world.width, world.height);
+
+                for (let row = 0; row < rows; row += 1) {
+                    for (let col = 0; col < cols; col += 1) {
+                        const pos = index(row, col);
+                        const alive = grid[pos] === 1;
+                        const wasAlive = previousGrid[pos] === 1;
+                        if (!alive && !wasAlive) continue;
+
+                        if (alive && !wasAlive) {
+                            ctx.fillStyle = '#5dd39e';
+                        } else if (!alive && wasAlive) {
+                            ctx.fillStyle = '#ee6c4d';
+                        } else {
+                            ctx.fillStyle = '#f4d35e';
+                        }
+
+                        ctx.fillRect(
+                            world.offsetX + col * cellSize + 1,
+                            world.offsetY + row * cellSize + 1,
+                            Math.max(1, cellSize - 2),
+                            Math.max(1, cellSize - 2)
+                        );
+                    }
+                }
+
+                if (ui.grid.checked && cellSize >= 6) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for (let col = 0; col <= cols; col += 1) {
+                        const x = world.offsetX + col * cellSize + 0.5;
+                        ctx.moveTo(x, world.offsetY);
+                        ctx.lineTo(x, world.offsetY + world.height);
+                    }
+                    for (let row = 0; row <= rows; row += 1) {
+                        const y = world.offsetY + row * cellSize + 0.5;
+                        ctx.moveTo(world.offsetX, y);
+                        ctx.lineTo(world.offsetX + world.width, y);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            function countNeighbors(row, col) {
+                let count = 0;
+                for (let dr = -1; dr <= 1; dr += 1) {
+                    for (let dc = -1; dc <= 1; dc += 1) {
+                        if (dr === 0 && dc === 0) continue;
+                        let nr = row + dr;
+                        let nc = col + dc;
+
+                        if (ui.wrap.checked) {
+                            nr = (nr + rows) % rows;
+                            nc = (nc + cols) % cols;
+                        } else if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
+                            continue;
+                        }
+
+                        count += grid[index(nr, nc)];
+                    }
+                }
+                return count;
+            }
+
+            function step() {
+                const next = createGrid(rows, cols);
+                const periodReference = previousGrid.slice();
+                previousGrid = grid.slice();
+                liveCount = 0;
+
+                for (let row = 0; row < rows; row += 1) {
+                    for (let col = 0; col < cols; col += 1) {
+                        const pos = index(row, col);
+                        const neighbors = countNeighbors(row, col);
+                        const survives = grid[pos] === 1 && (neighbors === 2 || neighbors === 3);
+                        const born = grid[pos] === 0 && neighbors === 3;
+                        next[pos] = survives || born ? 1 : 0;
+                        liveCount += next[pos];
+                    }
+                }
+
+                grid = next;
+                generation += 1;
+                liveCount = countLiveCells();
+                trackHistory();
+                if (ui.evolutionRule.checked) {
+                    detectStableSystems(periodReference);
+                    processEvolutionQueue();
+                }
+                if (ui.lifeBirthRule.checked) applyGenerationBurst();
+                liveCount = countLiveCells();
+                updateStats();
+                draw();
+                saveState();
+            }
+
+            function trackHistory() {
+                let hash = 2166136261;
+                for (let i = 0; i < grid.length; i += 1) {
+                    hash ^= grid[i] + i;
+                    hash = Math.imul(hash, 16777619);
+                }
+                const signature = `${liveCount}:${hash >>> 0}`;
+                history.push(signature);
+                if (history.length > 80) history.shift();
+
+                const firstSeen = history.indexOf(signature);
+                if (firstSeen !== history.length - 1) {
+                    const period = history.length - 1 - firstSeen;
+                    ui.state.textContent = period === 1 ? 'Стабільно' : `Цикл ${period}`;
+                    setStatus(period === 1 ? 'Фігура стабілізувалася.' : `Знайдено повтор із періодом ${period}.`);
+                }
+            }
+
+            function detectStableSystems(twoStepsAgo) {
+                if (generation < 2) return;
+
+                const components = findStableSystemComponents(twoStepsAgo);
+                let scheduled = 0;
+                const delay = clampInt(ui.evolutionDelay.value, 0, 10000, defaultEvolutionDelay);
+                ui.evolutionDelay.value = delay;
+                const kinds = new Set();
+                for (const component of components) {
+                    const kind = componentStabilityKind(component, twoStepsAgo);
+                    if (!kind) continue;
+                    const key = stableSystemKey(component);
+                    if (evolvedSystems.has(key)) continue;
+                    evolvedSystems.add(key);
+                    evolutionQueue.push({
+                        key,
+                        triggerAt: generation + delay,
+                        bbox: component.bbox,
+                        cells: component.currentCells,
+                        kind
+                    });
+                    scheduled += 1;
+                    kinds.add(kind);
+                }
+
+                if (scheduled > 0) {
+                    ui.state.textContent = 'Еволюція';
+                    const kindText = kinds.has('period2') && kinds.has('still')
+                        ? 'стабільних систем'
+                        : kinds.has('period2')
+                            ? 'період-2 систем'
+                            : 'нерухомих систем';
+                    setStatus(`Еволюція: ${scheduled} ${kindText} дадуть одну копію справа через ${delay} поколінь.`);
+                }
+            }
+
+            function findStableSystemComponents(twoStepsAgo) {
+                const active = new Uint8Array(grid.length);
+                for (let i = 0; i < active.length; i += 1) {
+                    active[i] = grid[i] || previousGrid[i] || twoStepsAgo[i] ? 1 : 0;
+                }
+
+                const visited = new Uint8Array(active.length);
+                const components = [];
+                const dirs = [-1, 0, 1];
+
+                for (let start = 0; start < active.length; start += 1) {
+                    if (!active[start] || visited[start]) continue;
+
+                    const stack = [start];
+                    visited[start] = 1;
+                    const cells = [];
+                    let minRow = rows;
+                    let maxRow = 0;
+                    let minCol = cols;
+                    let maxCol = 0;
+
+                    while (stack.length) {
+                        const pos = stack.pop();
+                        const row = Math.floor(pos / cols);
+                        const col = pos % cols;
+                        cells.push(pos);
+                        minRow = Math.min(minRow, row);
+                        maxRow = Math.max(maxRow, row);
+                        minCol = Math.min(minCol, col);
+                        maxCol = Math.max(maxCol, col);
+
+                        for (const dr of dirs) {
+                            for (const dc of dirs) {
+                                if (dr === 0 && dc === 0) continue;
+                                const nr = row + dr;
+                                const nc = col + dc;
+                                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+                                const nextPos = index(nr, nc);
+                                if (active[nextPos] && !visited[nextPos]) {
+                                    visited[nextPos] = 1;
+                                    stack.push(nextPos);
+                                }
+                            }
+                        }
+                    }
+
+                    const bbox = {
+                        row: minRow,
+                        col: minCol,
+                        height: maxRow - minRow + 1,
+                        width: maxCol - minCol + 1
+                    };
+                    const currentCells = cells
+                        .filter(pos => grid[pos] === 1)
+                        .map(pos => ({
+                            row: Math.floor(pos / cols) - minRow,
+                            col: (pos % cols) - minCol
+                        }));
+                    const unionCells = cells.map(pos => ({
+                        row: Math.floor(pos / cols) - minRow,
+                        col: (pos % cols) - minCol
+                    }));
+
+                    const compactEnough = bbox.width <= 32 && bbox.height <= 32 && bbox.width * bbox.height <= 512;
+                    if (currentCells.length > 0 && compactEnough) {
+                        components.push({ bbox, currentCells, unionCells });
+                    }
+                }
+
+                return components;
+            }
+
+            function componentStabilityKind(component, twoStepsAgo) {
+                const { bbox } = component;
+                let changedFromPrevious = false;
+                let sameAsPrevious = true;
+                let sameAsTwoStepsAgo = true;
+
+                for (let row = bbox.row; row < bbox.row + bbox.height; row += 1) {
+                    for (let col = bbox.col; col < bbox.col + bbox.width; col += 1) {
+                        const pos = index(row, col);
+                        if (grid[pos] !== previousGrid[pos]) sameAsPrevious = false;
+                        if (grid[pos] !== twoStepsAgo[pos]) sameAsTwoStepsAgo = false;
+                        if (grid[pos] !== previousGrid[pos]) changedFromPrevious = true;
+                    }
+                }
+
+                if (sameAsPrevious) return 'still';
+                if (sameAsTwoStepsAgo && changedFromPrevious) return 'period2';
+                return '';
+            }
+
+            function stableSystemKey(component) {
+                const shape = component.unionCells
+                    .map(cell => `${cell.row}:${cell.col}`)
+                    .sort()
+                    .join(',');
+                return `${component.bbox.row}:${component.bbox.col}:${component.bbox.width}:${component.bbox.height}:${shape}`;
+            }
+
+            function processEvolutionQueue() {
+                if (evolutionQueue.length === 0) return;
+                const remaining = [];
+                let spawned = 0;
+                let waiting = 0;
+
+                for (const item of evolutionQueue) {
+                    if (item.triggerAt > generation) {
+                        remaining.push(item);
+                        continue;
+                    }
+
+                    if (!queuedSystemStillPresent(item)) {
+                        if (item.key) evolvedSystems.delete(item.key);
+                        continue;
+                    }
+
+                    const placed = spawnStableSystemCopies(item);
+                    if (placed > 0) {
+                        spawned += placed;
+                    } else {
+                        item.triggerAt = generation + 1;
+                        remaining.push(item);
+                        waiting += 1;
+                    }
+                }
+
+                evolutionQueue = remaining;
+                if (spawned > 0) {
+                    const waitingText = waiting > 0 ? `, ${waiting} очікують вільне місце справа` : '';
+                    setStatus(`Еволюція стабільної системи: додано ${spawned} копій справа${waitingText}.`);
+                } else if (waiting > 0) {
+                    setStatus(`Еволюція стабільної системи: ${waiting} фігур очікують вільне місце справа.`);
+                }
+            }
+
+            function spawnStableSystemCopies(item) {
+                const { bbox, cells } = item;
+                const target = { row: bbox.row, col: bbox.col + bbox.width };
+                if (!canPlaceFigure(target.row, target.col, bbox.height, bbox.width)) {
+                    return 0;
+                }
+
+                for (const cell of cells) {
+                    grid[index(target.row + cell.row, target.col + cell.col)] = 1;
+                }
+
+                return 1;
+            }
+
+            function queuedSystemStillPresent(item) {
+                const currentMatches = item.cells.every(cell =>
+                    grid[index(item.bbox.row + cell.row, item.bbox.col + cell.col)] === 1
+                );
+                if (currentMatches || item.kind !== 'period2') return currentMatches;
+                return item.cells.every(cell =>
+                    previousGrid[index(item.bbox.row + cell.row, item.bbox.col + cell.col)] === 1
+                );
+            }
+
+            function canPlaceFigure(row, col, height, width) {
+                if (row < 0 || col < 0 || row + height > rows || col + width > cols) return false;
+                for (let r = row; r < row + height; r += 1) {
+                    for (let c = col; c < col + width; c += 1) {
+                        if (grid[index(r, c)] !== 0) return false;
+                    }
+                }
+                return true;
+            }
+
+            function findLifeBirthArea(size) {
+                const maxRow = rows - size;
+                const maxCol = cols - size;
+                let bestArea = null;
+
+                const inspectArea = (baseRow, baseCol) => {
+                    const emptyCells = [];
+                    for (let row = 0; row < size; row += 1) {
+                        for (let col = 0; col < size; col += 1) {
+                            const pos = index(baseRow + row, baseCol + col);
+                            if (grid[pos] === 0) emptyCells.push(pos);
+                        }
+                    }
+                    return { baseRow, baseCol, emptyCells };
+                };
+
+                for (let attempt = 0; attempt < 80; attempt += 1) {
+                    const area = inspectArea(
+                        Math.floor(Math.random() * (maxRow + 1)),
+                        Math.floor(Math.random() * (maxCol + 1))
+                    );
+                    if (area.emptyCells.length === size * size) return area;
+                    if (!bestArea || area.emptyCells.length > bestArea.emptyCells.length) bestArea = area;
+                }
+
+                for (let baseRow = 0; baseRow <= maxRow; baseRow += 1) {
+                    for (let baseCol = 0; baseCol <= maxCol; baseCol += 1) {
+                        const area = inspectArea(baseRow, baseCol);
+                        if (area.emptyCells.length === size * size) return area;
+                        if (!bestArea || area.emptyCells.length > bestArea.emptyCells.length) bestArea = area;
+                    }
+                }
+
+                return bestArea && bestArea.emptyCells.length > 0 ? bestArea : null;
+            }
+
+            function applyGenerationBurst() {
+                if (!ui.lifeBirthRule.checked) return;
+                const interval = clampInt(ui.lifeBirthInterval.value, 0, 100000, defaultLifeBirthInterval);
+                ui.lifeBirthInterval.value = interval;
+                if (interval === 0 || generation === 0 || generation % interval !== 0) return;
+
+                const size = Math.min(burstSize, rows, cols);
+                const area = findLifeBirthArea(size);
+                if (!area) {
+                    setStatus(`Покоління ${generation}: немає порожніх клітин для зародження життя.`);
+                    return;
+                }
+
+                let added = 0;
+                const skipped = [];
+                for (const pos of area.emptyCells) {
+                    if (Math.random() < 0.48) {
+                        grid[pos] = 1;
+                        added += 1;
+                    } else {
+                        skipped.push(pos);
+                    }
+                }
+
+                if (added === 0 && skipped.length > 0) {
+                    const pos = skipped[Math.floor(Math.random() * skipped.length)];
+                    grid[pos] = 1;
+                    added = 1;
+                }
+
+                setStatus(`Покоління ${generation}: зародження життя 10x10 додало ${added} клітин на порожніх місцях.`);
+            }
+
+            function updateStats() {
+                const total = rows * cols;
+                const density = total === 0 ? 0 : (liveCount / total) * 100;
+                ui.generation.textContent = String(generation);
+                ui.live.textContent = String(liveCount);
+                ui.density.textContent = `${density.toFixed(density < 10 ? 1 : 0)}%`;
+                if (running) {
+                    ui.state.textContent = 'Рух';
+                } else if (liveCount === 0) {
+                    ui.state.textContent = 'Тиша';
+                } else if (!ui.state.textContent.startsWith('Цикл') && ui.state.textContent !== 'Стабільно') {
+                    ui.state.textContent = 'Пауза';
+                }
+                ui.badge.textContent = `${rows} x ${cols}, клітинка ${cellSize} px`;
+                ui.speedLabel.textContent = `${ui.speed.value} мс`;
+                ui.randomnessLabel.textContent = `${ui.randomness.value}%`;
+            }
+
+            function setStatus(text) {
+                ui.status.textContent = text;
+            }
+
+            function resetHistory() {
+                history = [];
+                ui.state.textContent = running ? 'Рух' : 'Пауза';
+            }
+
+            function resetRuleState() {
+                evolutionQueue = [];
+                evolvedSystems = new Set();
+            }
+
+            function randomize() {
+                const probability = Number(ui.randomness.value) / 100;
+                previousGrid = createGrid(rows, cols);
+                grid = createGrid(rows, cols);
+                liveCount = 0;
+                for (let i = 0; i < grid.length; i += 1) {
+                    grid[i] = Math.random() < probability ? 1 : 0;
+                    liveCount += grid[i];
+                }
+                generation = 0;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                saveState();
+                setStatus('Випадковий світ створено.');
+            }
+
+            function clearWorld() {
+                running = false;
+                grid = createGrid(rows, cols);
+                previousGrid = createGrid(rows, cols);
+                generation = 0;
+                liveCount = 0;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                saveState();
+                setStatus('Поле очищено.');
+            }
+
+            function applySize() {
+                running = false;
+                rows = clampInt(ui.rows.value, 12, 220, rows);
+                cols = clampInt(ui.cols.value, 12, 260, cols);
+                cellSize = clampInt(ui.cellSize.value, 4, 24, cellSize);
+                ui.rows.value = rows;
+                ui.cols.value = cols;
+                ui.cellSize.value = cellSize;
+                clearWorld();
+                setStatus('Розмір світу оновлено.');
+            }
+
+            function resetSettings() {
+                running = false;
+                rows = defaultRows;
+                cols = defaultCols;
+                cellSize = defaultCellSize;
+                ui.rows.value = defaultRows;
+                ui.cols.value = defaultCols;
+                ui.cellSize.value = defaultCellSize;
+                ui.speed.value = defaultSpeed;
+                ui.randomness.value = defaultRandomness;
+                ui.patternSelect.value = defaultPattern;
+                ui.wrap.checked = defaultWrap;
+                ui.grid.checked = defaultShowGrid;
+                ui.evolutionRule.checked = false;
+                ui.evolutionDelay.value = defaultEvolutionDelay;
+                ui.lifeBirthRule.checked = false;
+                ui.lifeBirthInterval.value = defaultLifeBirthInterval;
+                grid = createGrid(rows, cols);
+                previousGrid = createGrid(rows, cols);
+                generation = 0;
+                liveCount = 0;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                saveState();
+                setStatus('Налаштування скинуто до стандартних.');
+            }
+
+            function placePattern(name, centered = true) {
+                const pattern = patterns[name] || patterns.glider;
+                previousGrid = grid.slice();
+
+                const maxRow = Math.max(...pattern.map(([row]) => row));
+                const maxCol = Math.max(...pattern.map(([, col]) => col));
+                const baseRow = centered ? Math.floor((rows - maxRow - 1) / 2) : 2;
+                const baseCol = centered ? Math.floor((cols - maxCol - 1) / 2) : 2;
+
+                for (const [row, col] of pattern) {
+                    const nr = baseRow + row;
+                    const nc = baseCol + col;
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                        grid[index(nr, nc)] = 1;
+                    }
+                }
+
+                liveCount = countLiveCells();
+                generation = 0;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                saveState();
+                setStatus('Патерн вставлено.');
+            }
+
+            function seedWorld() {
+                clearWorld();
+                placePattern('gosper');
+                placePattern('pulsar', false);
+                setStatus('Додано стартове насіння з кількох класичних фігур.');
+            }
+
+            function countLiveCells() {
+                let count = 0;
+                for (let i = 0; i < grid.length; i += 1) count += grid[i];
+                return count;
+            }
+
+            function pointerToCell(event) {
+                const rect = canvas.getBoundingClientRect();
+                const world = worldSize();
+                const x = event.clientX - rect.left - world.offsetX;
+                const y = event.clientY - rect.top - world.offsetY;
+                const col = Math.floor(x / cellSize);
+                const row = Math.floor(y / cellSize);
+                if (row < 0 || row >= rows || col < 0 || col >= cols) return null;
+                return { row, col };
+            }
+
+            function toggleCell(event) {
+                const cell = pointerToCell(event);
+                if (!cell) return;
+                const pos = index(cell.row, cell.col);
+                previousGrid = grid.slice();
+                grid[pos] = grid[pos] ? 0 : 1;
+                liveCount += grid[pos] ? 1 : -1;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                saveState();
+            }
+
+            function animate(time) {
+                if (!lastFrame) lastFrame = time;
+                const delta = time - lastFrame;
+                lastFrame = time;
+
+                if (running) {
+                    accumulator += delta;
+                    const delay = Number(ui.speed.value);
+                    while (accumulator >= delay && running) {
+                        step();
+                        accumulator -= delay;
+                    }
+                }
+
+                rafId = requestAnimationFrame(animate);
+            }
+
+            function play() {
+                running = true;
+                resetHistory();
+                updateStats();
+                setStatus(liveCount === 0 ? 'Симуляція запущена на порожньому полі.' : 'Симуляція запущена.');
+            }
+
+            function pause() {
+                running = false;
+                updateStats();
+                setStatus('Симуляцію поставлено на паузу.');
+            }
+
+            function readStoredState() {
+                try {
+                    return localStorage.getItem(STORAGE_KEY);
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function writeStoredState(state) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function saveState() {
+                const state = {
+                    version: 1,
+                    rows,
+                    cols,
+                    cellSize,
+                    generation,
+                    liveCount,
+                    wrap: ui.wrap.checked,
+                    showGrid: ui.grid.checked,
+                    evolutionRule: ui.evolutionRule.checked,
+                    evolutionDelay: clampInt(ui.evolutionDelay.value, 0, 10000, defaultEvolutionDelay),
+                    lifeBurstRule: ui.lifeBirthRule.checked,
+                    lifeBurstInterval: clampInt(ui.lifeBirthInterval.value, 0, 100000, defaultLifeBirthInterval),
+                    speed: Number(ui.speed.value),
+                    randomness: Number(ui.randomness.value),
+                    grid: Array.from(grid)
+                };
+                writeStoredState(state);
+            }
+
+            function restoreState() {
+                const raw = readStoredState();
+                if (!raw) {
+                    clearWorld();
+                    setStatus('Порожній світ готовий.');
+                    return;
+                }
+
+                try {
+                    loadConfig(JSON.parse(raw), false);
+                    setStatus('Попередній стан відновлено.');
+                } catch (error) {
+                    clearWorld();
+                    setStatus('Старий стан не вдалося прочитати, відкрито порожній світ.');
+                }
+            }
+
+            function normalizeGrid(source) {
+                if (!Array.isArray(source)) throw new Error('Grid must be an array.');
+                if (Array.isArray(source[0])) {
+                    const r = source.length;
+                    const c = source[0].length;
+                    const flat = createGrid(r, c);
+                    for (let row = 0; row < r; row += 1) {
+                        for (let col = 0; col < c; col += 1) {
+                            flat[row * c + col] = source[row][col] ? 1 : 0;
+                        }
+                    }
+                    return { rows: r, cols: c, flat };
+                }
+                return { rows, cols, flat: Uint8Array.from(source.map(value => value ? 1 : 0)) };
+            }
+
+            function loadConfig(config, persist = true) {
+                const rawGrid = Array.isArray(config) ? config : config.grid;
+                const normalized = normalizeGrid(rawGrid);
+                rows = clampInt(config.rows ?? normalized.rows, 12, 220, normalized.rows);
+                cols = clampInt(config.cols ?? normalized.cols, 12, 260, normalized.cols);
+                cellSize = clampInt(config.cellSize, 4, 24, cellSize);
+
+                grid = createGrid(rows, cols);
+                const limit = Math.min(grid.length, normalized.flat.length);
+                for (let i = 0; i < limit; i += 1) grid[i] = normalized.flat[i];
+
+                previousGrid = createGrid(rows, cols);
+                generation = clampInt(config.generation ?? config.generationCount, 0, 9999999, 0);
+                liveCount = countLiveCells();
+                ui.rows.value = rows;
+                ui.cols.value = cols;
+                ui.cellSize.value = cellSize;
+                if (typeof config.wrap === 'boolean') ui.wrap.checked = config.wrap;
+                if (typeof config.showGrid === 'boolean') ui.grid.checked = config.showGrid;
+                ui.evolutionRule.checked = config.evolutionRule === true;
+                if (config.evolutionDelay !== undefined) {
+                    ui.evolutionDelay.value = clampInt(config.evolutionDelay, 0, 10000, defaultEvolutionDelay);
+                }
+                ui.lifeBirthRule.checked = config.lifeBurstRule === true;
+                if (config.speed) ui.speed.value = clampInt(config.speed, 30, 900, 120);
+                if (config.randomness) ui.randomness.value = clampInt(config.randomness, 5, 75, 34);
+                if (config.lifeBurstInterval !== undefined) {
+                    ui.lifeBirthInterval.value = clampInt(config.lifeBurstInterval, 0, 100000, defaultLifeBirthInterval);
+                }
+                running = false;
+                resetHistory();
+                resetRuleState();
+                updateStats();
+                draw();
+                if (persist) saveState();
+            }
+
+            function downloadConfig() {
+                const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                const config = {
+                    name: 'Codex Life',
+                    rows,
+                    cols,
+                    cellSize,
+                    generation,
+                    wrap: ui.wrap.checked,
+                    showGrid: ui.grid.checked,
+                    evolutionRule: ui.evolutionRule.checked,
+                    evolutionDelay: clampInt(ui.evolutionDelay.value, 0, 10000, defaultEvolutionDelay),
+                    lifeBurstRule: ui.lifeBirthRule.checked,
+                    lifeBurstInterval: clampInt(ui.lifeBirthInterval.value, 0, 100000, defaultLifeBirthInterval),
+                    grid: Array.from({ length: rows }, (_, row) =>
+                        Array.from({ length: cols }, (_, col) => grid[index(row, col)])
+                    )
+                };
+                const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `codex-life-${stamp}.json`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                setStatus('JSON збережено.');
+            }
+
+            function loadFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        loadConfig(JSON.parse(String(reader.result)));
+                        setStatus('Файл завантажено.');
+                    } catch (error) {
+                        setStatus('Не вдалося завантажити файл JSON.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            ui.play.addEventListener('click', play);
+            ui.pause.addEventListener('click', pause);
+            ui.step.addEventListener('click', () => {
+                running = false;
+                const statusBeforeStep = ui.status.textContent;
+                step();
+                if (ui.status.textContent === statusBeforeStep) {
+                    setStatus('Зроблено один крок.');
+                }
+            });
+            ui.clear.addEventListener('click', clearWorld);
+            ui.random.addEventListener('click', randomize);
+            ui.seed.addEventListener('click', seedWorld);
+            ui.resetSettings.addEventListener('click', () => {
+                if (!window.confirm('Скинути налаштування і очистити поле?')) {
+                    setStatus('Скидання налаштувань скасовано.');
+                    return;
+                }
+                resetSettings();
+            });
+            ui.apply.addEventListener('click', applySize);
+            ui.pattern.addEventListener('click', () => placePattern(ui.patternSelect.value));
+            ui.save.addEventListener('click', downloadConfig);
+            ui.load.addEventListener('click', () => ui.file.click());
+            ui.file.addEventListener('change', event => {
+                const [file] = event.target.files;
+                if (file) loadFromFile(file);
+                ui.file.value = '';
+            });
+            ui.speed.addEventListener('input', updateStats);
+            ui.randomness.addEventListener('input', updateStats);
+            ui.lifeBirthInterval.addEventListener('input', () => {
+                ui.lifeBirthInterval.value = clampInt(ui.lifeBirthInterval.value, 0, 100000, defaultLifeBirthInterval);
+                saveState();
+            });
+            ui.evolutionRule.addEventListener('change', () => {
+                if (!ui.evolutionRule.checked) resetRuleState();
+                saveState();
+            });
+            ui.evolutionDelay.addEventListener('input', () => {
+                ui.evolutionDelay.value = clampInt(ui.evolutionDelay.value, 0, 10000, defaultEvolutionDelay);
+                resetRuleState();
+                saveState();
+            });
+            ui.lifeBirthRule.addEventListener('change', saveState);
+            ui.grid.addEventListener('change', () => {
+                draw();
+                saveState();
+            });
+            ui.wrap.addEventListener('change', () => {
+                resetHistory();
+                saveState();
+            });
+            canvas.addEventListener('pointerdown', event => {
+                canvas.setPointerCapture(event.pointerId);
+                toggleCell(event);
+            });
+            canvas.addEventListener('pointermove', event => {
+                if (event.buttons === 1) toggleCell(event);
+            });
+            window.addEventListener('resize', resizeCanvas);
+
+            function startGame() {
+                try {
+                    restoreState();
+                    resizeCanvas();
+                    updateStats();
+                    rafId = requestAnimationFrame(animate);
+                } catch (error) {
+                    rows = defaultRows;
+                    cols = defaultCols;
+                    cellSize = defaultCellSize;
+                    grid = createGrid(rows, cols);
+                    previousGrid = createGrid(rows, cols);
+                    generation = 0;
+                    liveCount = 0;
+                    resetHistory();
+                    resetRuleState();
+                    refreshControlsFromDefaults();
+                    updateStats();
+                    resizeCanvas();
+                    setStatus('Старт відновлено після помилки. Сховище або старий стан проігноровано.');
+                    rafId = requestAnimationFrame(animate);
+                }
+            }
+
+            function refreshControlsFromDefaults() {
+                ui.rows.value = defaultRows;
+                ui.cols.value = defaultCols;
+                ui.cellSize.value = defaultCellSize;
+                ui.speed.value = defaultSpeed;
+                ui.randomness.value = defaultRandomness;
+                ui.patternSelect.value = defaultPattern;
+                ui.wrap.checked = defaultWrap;
+                ui.grid.checked = defaultShowGrid;
+                ui.evolutionRule.checked = false;
+                ui.evolutionDelay.value = defaultEvolutionDelay;
+                ui.lifeBirthRule.checked = false;
+                ui.lifeBirthInterval.value = defaultLifeBirthInterval;
+            }
+
+            startGame();
+            window.addEventListener('beforeunload', () => {
+                cancelAnimationFrame(rafId);
+                saveState();
+            });
+        })();
+    </script>
+</body>
+</html>
